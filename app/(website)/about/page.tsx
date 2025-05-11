@@ -4,10 +4,10 @@ import { Metadata } from "next";
 
 export const revalidate = 0; // Revalidate the page at the edge
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata() {
   const settings = await getSettings();
   return {
-    title: "About Us | " + settings?.title,
+    title: `About Us | ${settings?.title || ""}`,
     description: "Meet our team of content creators and experts"
   };
 }

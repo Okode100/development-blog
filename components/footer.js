@@ -3,7 +3,7 @@ import ThemeSwitch from "@/components/themeSwitch";
 import Image from "next/image";
 import { myLoader } from "@/utils/all";
 import VercelLogo from "../public/img/vercel.svg";
-import { FaTwitter, FaFacebook, FaInstagram } from "react-icons/fa";
+import { FaTwitter, FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
 
 export default function Footer(props) {
   return (
@@ -41,6 +41,16 @@ export default function Footer(props) {
                 <td>
                   <a href="https://instagram.com" target="_blank" rel="noopener" className="hover:underline hover:text-blue-500 transition-colors">
                     @buddingafrica
+                  </a>
+                </td>
+              </tr>
+              <tr className="h-8">
+                <td className="pr-4 flex items-center">
+                  <FaYoutube className="mr-2 text-red-600 text-xl" /> YouTube:
+                </td>
+                <td>
+                  <a href="https://youtube.com" target="_blank" rel="noopener" className="hover:underline hover:text-blue-500 transition-colors">
+                    Budding Africa
                   </a>
                 </td>
               </tr>
