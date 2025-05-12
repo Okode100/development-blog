@@ -1,35 +1,45 @@
 import PostList from "@/components/postlist";
+import CategoryNav from "@/components/blog/CategoryNav";
 import Pagination from "@/components/blog/pagination";
-import { getPaginatedPosts } from "@/lib/sanity/client";
+import Container from "@/components/container";
+import { getPaginatedPosts, getTopCategories } from "@/lib/sanity/client";
 
 export default async function Post({ searchParams }) {
-  const page = searchParams.page;
-  const pageIndex = parseInt(page, 10) || 1;
-  const POSTS_PER_PAGE = 9; // Increased from 6 to show more posts per page
+  const pageIndex = parseInt(searchParams.page || "1");
+  const limit = parseInt(searchParams.limit || "6");
 
-  const params = {
-    pageIndex: (pageIndex - 1) * POSTS_PER_PAGE,
-    limit: pageIndex * POSTS_PER_PAGE
-  };
+  try {
+    const { posts = [], total = 0 } = await getPaginatedPosts({
+      limit,
+      pageIndex: (pageIndex - 1) * limit
+    });
+    const topCategories = await getTopCategories();
 
-  const posts = await getPaginatedPosts(params);
-  const isFirstPage = pageIndex < 2;
-  const isLastPage = posts.length < POSTS_PER_PAGE;
-
-  // Separate featured posts on the first page
-  const featuredPosts = pageIndex === 1 ? posts.filter(post => post.featured) : [];
-  const regularPosts = pageIndex === 1 ? posts.filter(post => !post.featured) : posts;
-
-  return (
-    <>
-      {posts && posts?.length === 0 ? (
+    if (!posts || posts.length === 0) {
+      return (
         <div className="flex h-40 items-center justify-center">
           <span className="text-lg text-gray-500 dark:text-gray-400">
-            End of the result!
+            No posts found. Check back later!
           </span>
         </div>
-      ) : (
-        <>
+      );
+    }
+
+    const featuredPosts = posts.filter(post => post.featured);
+    const regularPosts = posts.filter(post => !post.featured);
+    
+    const isFirstPage = pageIndex === 1;
+    const isLastPage = (pageIndex - 1) * limit + posts.length >= total;
+
+    return (
+      <Container>
+        <div className="mx-auto max-w-screen-xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-800 dark:text-neutral-200 md:text-4xl mb-8">
+            Articles
+          </h1>
+
+          <CategoryNav categories={topCategories} />
+
           {pageIndex === 1 && featuredPosts.length > 0 && (
             <div className="mb-16">
               <h2 className="mb-8 text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
@@ -64,8 +74,17 @@ export default async function Post({ searchParams }) {
             isFirstPage={isFirstPage}
             isLastPage={isLastPage}
           />
-        </>
-      )}
-    </>
-  );
+        </div>
+      </Container>
+    );
+  } catch (error) {
+    console.error("Error loading articles:", error);
+    return (
+      <div className="flex h-40 items-center justify-center">
+        <span className="text-lg text-gray-500 dark:text-gray-400">
+          Something went wrong. Please try again later.
+        </span>
+      </div>
+    );
+  }
 }

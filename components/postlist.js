@@ -1,11 +1,13 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
-import { cx } from "@/utils/all";
+import { format, parseISO } from "date-fns";
+import { PhotoIcon, StarIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { urlForImage } from "@/lib/sanity/image";
-import { parseISO, format } from "date-fns";
-import { PhotoIcon } from "@heroicons/react/24/outline";
-import { StarIcon, SparklesIcon } from "@heroicons/react/24/solid";
-import CategoryLabel from "@/components/blog/category";
+import { cx } from "@/utils/all";
+import CategoryLabel from "./blog/category";
+import { useState } from "react";
 
 export default function PostList({
   post,
@@ -16,8 +18,20 @@ export default function PostList({
   fontSize,
   fontWeight
 }) {
+  const [imageError, setImageError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const imageProps = post?.mainImage ? urlForImage(post.mainImage) : null;
   const AuthorimageProps = post?.author?.image ? urlForImage(post.author.image) : null;
+
+  const handleImageError = () => {
+    if (retryCount < 3) {
+      // Retry loading the image up to 3 times
+      setRetryCount(prev => prev + 1);
+      setImageError(false);
+    } else {
+      setImageError(true);
+    }
+  };
 
   return (
     <>
@@ -30,7 +44,7 @@ export default function PostList({
                 aspect === "landscape" ? "aspect-video" : aspect === "custom" ? "aspect-[5/4]" : "aspect-square"
               )}
               href={`/post/${pathPrefix ? `${pathPrefix}/` : ""}${post.slug.current}`}>
-              {imageProps ? (
+              {imageProps && !imageError ? (
                 <Image
                   src={imageProps.src}
                   {...(post.mainImage.blurDataURL && {
@@ -42,6 +56,8 @@ export default function PostList({
                   className="object-cover transition-all"
                   fill
                   sizes="(max-width: 768px) 30vw, 33vw"
+                  onError={handleImageError}
+                  key={retryCount} // Force remount on retry
                 />
               ) : (
                 <span className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 text-gray-200">
@@ -50,9 +66,9 @@ export default function PostList({
               )}
             </Link>
           </div>
-          
+
           {/* Post Status Indicators */}
-          <div className="absolute top-2 right-2 flex gap-2">
+          <div className="absolute right-2 top-2 flex gap-2">
             {post.isPinned && (
               <span className="rounded-full bg-amber-100 p-1 text-amber-600 dark:bg-amber-900 dark:text-amber-300">
                 <StarIcon className="h-4 w-4" />
@@ -79,14 +95,7 @@ export default function PostList({
               )}>
               <Link
                 href={`/post/${pathPrefix ? `${pathPrefix}/` : ""}${post.slug.current}`}>
-                <span
-                  className="bg-gradient-to-r from-green-200 to-green-100 bg-[length:0px_10px] bg-left-bottom
-      bg-no-repeat
-      transition-[background-size]
-      duration-500
-      hover:bg-[length:100%_3px]
-      group-hover:bg-[length:100%_10px]
-      dark:from-purple-800 dark:to-purple-900">
+                <span className="bg-gradient-to-r from-green-200 to-green-100 bg-[length:0px_10px] bg-left-bottom bg-no-repeat transition-[background-size] duration-500 hover:bg-[length:100%_3px] group-hover:bg-[length:100%_10px] dark:from-purple-800 dark:to-purple-900">
                   {post.title}
                 </span>
               </Link>
@@ -95,8 +104,7 @@ export default function PostList({
             <div className="hidden">
               {post.excerpt && (
                 <p className="mt-2 line-clamp-3 text-sm text-gray-500 dark:text-gray-400">
-                  <Link
-                    href={`/post/${pathPrefix ? `${pathPrefix}/` : ""}${post.slug.current}`}>
+                  <Link href={`/post/${pathPrefix ? `${pathPrefix}/` : ""}${post.slug.current}`}>
                     {post.excerpt}
                   </Link>
                 </p>
@@ -107,15 +115,17 @@ export default function PostList({
               <Link href={`/author/${post?.author?.slug?.current || '#'}`}>
                 <div className="flex items-center gap-3">
                   <div className="relative h-5 w-5 flex-shrink-0">
-                    {post?.author?.image && (
+                    {post?.author?.image && !imageError ? (
                       <Image
                         src={AuthorimageProps.src}
                         alt={post?.author?.name || "Author"}
                         className="rounded-full object-cover"
                         fill
                         sizes="20px"
+                        onError={handleImageError}
+                        key={`author-${retryCount}`} // Force remount on retry
                       />
-                    )}
+                    ) : null}
                   </div>
                   <span className="truncate text-sm">
                     {post?.author?.name}
